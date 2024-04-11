@@ -25,7 +25,7 @@ class ResponseTest extends FunSpec {
   describe("StringOptions") {
     it("should extract a list of option string from a option bytestring list ") {
       val resp = Some(List(Some(ByteString("l1")), None, Some(ByteString("l2"))))
-      val seq = Response.AsStringOptions.unapply(resp)
+      val seq  = Response.AsStringOptions.unapply(resp)
       assertResult(Some(Seq(Some("l1"), None, Some("l2"))))(seq)
     }
   }
@@ -33,7 +33,7 @@ class ResponseTest extends FunSpec {
   describe("Strings") {
     it("should extract a list of string from a option bytestring list ") {
       val resp = Some(List(Some(ByteString("l1")), Some(ByteString("l2")), Some(ByteString("l3"))))
-      val seq = Response.AsStrings.unapply(resp)
+      val seq  = Response.AsStrings.unapply(resp)
       assertResult(Some(Seq("l1", "l2", "l3")))(seq)
     }
 
@@ -46,7 +46,7 @@ class ResponseTest extends FunSpec {
   describe("Bytes Sequences") {
     it("should extract a list of string from a option bytestring list ") {
       val resp = Some(List(Some(ByteString(0, 1)), Some(ByteString(2, 3))))
-      val seq = Response.AsByteSeqs.unapply(resp)
+      val seq  = Response.AsByteSeqs.unapply(resp)
       assertResult(Some(Seq(Seq(0, 1), Seq(2, 3))))(seq)
     }
 
@@ -58,7 +58,8 @@ class ResponseTest extends FunSpec {
 
   describe("Strings Hashes") {
     it("should extract a map when the result list has an heaven size") {
-      val resp = Some(List(Some(ByteString("k1")), Some(ByteString("v1")), Some(ByteString("k2")), Some(ByteString("v2"))))
+      val resp =
+        Some(List(Some(ByteString("k1")), Some(ByteString("v1")), Some(ByteString("k2")), Some(ByteString("v2"))))
       val map = Response.AsStringsHash.unapply(resp)
       assertResult(Some(Map("k1" -> "v1", "k2" -> "v2")))(map)
     }

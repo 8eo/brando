@@ -10,7 +10,7 @@ object Request {
 //Helps creating a request like HMSET key k1 v1 k2 v2...
 object HashRequest {
   def apply(cmd: String, key: String, map: Map[String, String]) = {
-    val args = Seq(key) ++ map.flatMap(e ⇒ Seq(e._1, e._2))
+    val args = Seq(key) ++ map.flatMap(e => Seq(e._1, e._2))
     Request(cmd, args: _*)
   }
 }
