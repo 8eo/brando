@@ -1,6 +1,5 @@
 name := "brando"
 organization := "com.digital-achiever"
-version := "3.2.0"
 scalaVersion := "2.13.8"
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
@@ -8,13 +7,7 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 // for this bug: https://github.com/sbt/sbt/issues/3570
 updateOptions := updateOptions.value.withGigahorse(false)
 
-publishTo := Some("Horn SBT" at "https://sbt.horn.co/repository/internal")
-credentials += Credentials(
-  "Repository Archiva Managed internal Repository",
-  "sbt.horn.co",
-  sys.env("HORN_SBT_USERNAME"),
-  sys.env("HORN_SBT_PASSWORD")
-)
+publishTo := Some("Horn SBT" at "https://maven.pkg.github.com/8eo/brando")
 
 val akkaV = "2.6.19"
 
