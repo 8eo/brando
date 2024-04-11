@@ -88,19 +88,19 @@ Responses will also be grouped in a single list of the same size as the Batch re
 
 Use the provided response extractors to map your Redis reply to a more appropriate Scala type.
 
-      for{ Response.AsString(value) ← redis ? Request("GET", "key") } yield value
+      for{ Response.AsString(value) <- redis ? Request("GET", "key") } yield value
       
       //value: String
       
-      for{ Response.AsStrings(values) ← redis ? Request("KEYS", "*") } yield values
+      for{ Response.AsStrings(values) <- redis ? Request("KEYS", "*") } yield values
       
       //values: Seq[String]
       
-      for{ Response.AsByteSeqs(value) ← redis ? Request("GET", "key") } yield value
+      for{ Response.AsByteSeqs(value) <- redis ? Request("GET", "key") } yield value
       
       //value: Seq[Byte]
       
-      for{ Response.AsStringsHash(fields) ← redis ? Request("HGETALL", "hash-key") } yield fields
+      for{ Response.AsStringsHash(fields) <- redis ? Request("HGETALL", "hash-key") } yield fields
       
       //fields: Map[String,String]
       

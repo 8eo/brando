@@ -1,12 +1,11 @@
 package brando
 
-import java.util.concurrent.TimeUnit
-import java.util.zip.CRC32
-
 import akka.actor._
 import akka.util._
 import com.typesafe.config.ConfigFactory
 
+import java.util.concurrent.TimeUnit
+import java.util.zip.CRC32
 import scala.collection.mutable
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -14,21 +13,26 @@ import scala.util.Failure
 
 object ShardManager {
   def apply(
-    shards: Seq[Shard],
-    listeners: Set[ActorRef] = Set(),
-    sentinelClient: Option[ActorRef] = None,
-    hashFunction: (Array[Byte] ⇒ Long) = defaultHashFunction,
-    connectionTimeout: Option[FiniteDuration] = None,
-    connectionRetryDelay: Option[FiniteDuration] = None,
-    connectionHeartbeatDelay: Option[FiniteDuration] = None): Props = {
+      shards: Seq[Shard],
+      listeners: Set[ActorRef] = Set(),
+      sentinelClient: Option[ActorRef] = None,
+      hashFunction: (Array[Byte] => Long) = defaultHashFunction,
+      connectionTimeout: Option[FiniteDuration] = None,
+      connectionRetryDelay: Option[FiniteDuration] = None,
+      connectionHeartbeatDelay: Option[FiniteDuration] = None
+  ): Props = {
 
     val config = ConfigFactory.load()
-    Props(classOf[ShardManager], shards, hashFunction, listeners, sentinelClient,
-      connectionTimeout.getOrElse(
-        config.getDuration("brando.connection.timeout", TimeUnit.MILLISECONDS).millis),
-      connectionRetryDelay.getOrElse(
-        config.getDuration("brando.connection.retry.delay", TimeUnit.MILLISECONDS).millis),
-      connectionHeartbeatDelay)
+    Props(
+      classOf[ShardManager],
+      shards,
+      hashFunction,
+      listeners,
+      sentinelClient,
+      connectionTimeout.getOrElse(config.getDuration("brando.connection.timeout", TimeUnit.MILLISECONDS).millis),
+      connectionRetryDelay.getOrElse(config.getDuration("brando.connection.retry.delay", TimeUnit.MILLISECONDS).millis),
+      connectionHeartbeatDelay
+    )
   }
 
   def defaultHashFunction(input: Array[Byte]): Long = {
@@ -38,29 +42,28 @@ object ShardManager {
   }
 
   private[brando] trait Shard { val id: String }
-  case class RedisShard(id: String, host: String,
-    port: Int, database: Int = 0,
-    auth: Option[String] = None) extends Shard
-  case class SentinelShard(id: String, database: Int = 0,
-    auth: Option[String] = None) extends Shard
+  case class RedisShard(id: String, host: String, port: Int, database: Int = 0, auth: Option[String] = None)
+      extends Shard
+  case class SentinelShard(id: String, database: Int = 0, auth: Option[String] = None) extends Shard
 
   private[brando] case class SetShard(shard: Shard)
 }
 
 class ShardManager(
     shards: Seq[ShardManager.Shard],
-    hashFunction: (Array[Byte] ⇒ Long),
+    hashFunction: (Array[Byte] => Long),
     var listeners: Set[ActorRef] = Set(),
     sentinelClient: Option[ActorRef] = None,
     connectionTimeout: FiniteDuration,
     connectionRetryDelay: FiniteDuration,
-    connectionHeartbeatDelay: Option[FiniteDuration]) extends Actor {
+    connectionHeartbeatDelay: Option[FiniteDuration]
+) extends Actor {
 
   import ShardManager._
   import context.dispatcher
 
-  val pool = mutable.Map.empty[String, ActorRef]
-  val shardLookup = mutable.Map.empty[ActorRef, Shard]
+  val pool                  = mutable.Map.empty[String, ActorRef]
+  val shardLookup           = mutable.Map.empty[ActorRef, Shard]
   var poolKeys: Seq[String] = Seq()
 
   override def preStart: Unit = {
@@ -69,59 +72,77 @@ class ShardManager(
   }
 
   def receive = {
-    case (key: ByteString, request: Request) ⇒
+    case (key: ByteString, request: Request) =>
       forward(key, request)
 
-    case (key: String, request: Request) ⇒
+    case (key: String, request: Request) =>
       forward(ByteString(key), request)
 
-    case request: Request ⇒
+    case request: Request =>
       request.params.length match {
-        case 0 ⇒
-          sender ! Failure(new IllegalArgumentException("Received empty Request params, can not shard without a key"))
+        case 0 =>
+          sender() ! Failure(new IllegalArgumentException("Received empty Request params, can not shard without a key"))
 
-        case s ⇒
+        case s =>
           forward(request.params.head, request)
       }
 
-    case broadcast: BroadcastRequest ⇒
-      for ((_, shard) ← pool) {
+    case broadcast: BroadcastRequest =>
+      for ((_, shard) <- pool)
         shard forward Request(broadcast.command, broadcast.params: _*)
-      }
 
-    case SetShard(shard) ⇒
+    case SetShard(shard) =>
       pool.get(shard.id) foreach context.stop
       (shard, sentinelClient) match {
-        case (RedisShard(id, host, port, database, auth), _) ⇒
+        case (RedisShard(id, host, port, database, auth), _) =>
           val brando =
-            context.actorOf(Redis(host, port, database, auth, listeners,
-              Some(connectionTimeout), Some(connectionRetryDelay), None,
-              connectionHeartbeatDelay))
+            context.actorOf(
+              Redis(
+                Some(host),
+                port,
+                database,
+                auth,
+                listeners,
+                Some(connectionTimeout),
+                Some(connectionRetryDelay),
+                None,
+                connectionHeartbeatDelay
+              )
+            )
           add(shard, brando)
-        case (SentinelShard(id, database, auth), Some(sClient)) ⇒
+        case (SentinelShard(id, database, auth), Some(sClient)) =>
           val brando =
-            context.actorOf(RedisSentinel(id, sClient, database, auth,
-              listeners, Some(connectionTimeout), Some(connectionRetryDelay),
-              connectionHeartbeatDelay))
+            context.actorOf(
+              RedisSentinel(
+                id,
+                sClient,
+                database,
+                auth,
+                listeners,
+                Some(connectionTimeout),
+                Some(connectionRetryDelay),
+                connectionHeartbeatDelay
+              )
+            )
           add(shard, brando)
-        case _ ⇒
+        case _ =>
       }
 
-    case Terminated(l) ⇒
+    case Terminated(l) =>
       listeners = listeners - l
 
-    case _ ⇒
+    case _ =>
   }
 
   def forward(key: ByteString, req: Request) = {
-    val s = sender
-    Future { lookup(key).tell(req, s) }
+    val s = sender()
+    Future(lookup(key).tell(req, s))
   }
 
   def lookup(key: ByteString) = {
     val hash = hashFunction(key.toArray)
-    val mod = hash % poolKeys.size
-    val id = poolKeys(mod.toInt)
+    val mod  = hash % poolKeys.size
+    val id   = poolKeys(mod.toInt)
     pool(id)
   }
 
