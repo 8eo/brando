@@ -1,15 +1,45 @@
-.DS_Store
+# bloop and metals
+.bloop
+.bsp
+.metals
+project/metals.sbt
+project/project/metals.sbt
+project/project/project/metals.sbt
+
+# vs code
+.vscode
+
+# scala 3
+.tasty
+
+# sbt
+project/project/
+project/target/
 target/
-project/boot/
-project/build/target/
-project/plugins/target/
-project/plugins/lib_managed/
-project/plugins/src_managed/
-*.log
-.cache
+
+# eclipse
+build/
 .classpath
 .project
 .settings
-*.rdb
-.idea/
-.idea_modules/
+.worksheet
+bin/
+.cache
+
+# intellij idea
+*.log
+*.iml
+*.ipr
+*.iws
+.idea
+
+# mac
+.DS_Store
+
+# other?
+.history
+.scala_dependencies
+.cache-main
+
+# general
+*.class
